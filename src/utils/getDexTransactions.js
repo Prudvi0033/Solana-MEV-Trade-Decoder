@@ -1,4 +1,5 @@
 import { Connection } from "@solana/web3.js";
+import { analyzeTransaction } from "./analyzeTransaction.js";
 
 export const getAnalyzedDexTransactions = async () => {
   const connection = new Connection(
@@ -8,10 +9,10 @@ export const getAnalyzedDexTransactions = async () => {
   const currentSlot = await connection.getSlot();
   console.log("Current slot:", currentSlot);
 
-  const startSlot = currentSlot - 1;
+  const startSlot = currentSlot;
   const endSlot = currentSlot;
 
-  const analyzedTransactions = [];
+  const analyzedTransactions = []; // Fixed variable name
 
   try {
     for (let slot = startSlot; slot <= endSlot; slot++) {
@@ -28,15 +29,14 @@ export const getAnalyzedDexTransactions = async () => {
 
         let dexCount = 0;
         for (const tx of block.transactions) {
-          const dexesUsed = hasDexActivity(tx);
-          if (dexesUsed.length > 0) {
-            dexTransactions.push(dexesUsed);
+          const analyzed = await analyzeTransaction(tx); // Added await
+          if (analyzed) {
+            analyzedTransactions.push(analyzed); // Fixed variable name
             dexCount++;
           }
         }
 
         console.log(`${dexCount} DEX transactions found`);
-        
       }
     }
   } catch (error) {
@@ -45,6 +45,3 @@ export const getAnalyzedDexTransactions = async () => {
 
   return analyzedTransactions;
 };
-
-
-//we are getting mutiple transations because there are many people transacting by the those slots so even tho we are only checking for two slots we are getting many transactions
