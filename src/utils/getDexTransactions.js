@@ -52,7 +52,7 @@ export const getDexTransactions = async () => {
       });
 
       if (block && block.transactions) {
-        console.log(`\nBlock at slot ${slot}:`);
+        // console.log(`\nBlock at slot ${slot}:`);
 
         for (const tx of block.transactions) {
           const dexesUsed = hasDexActivity(tx);

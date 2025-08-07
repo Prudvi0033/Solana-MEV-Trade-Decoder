@@ -7,8 +7,6 @@ const main = async () => {
     for(const txns of dexTransactions){
       console.log(txns.signature);
       console.log(txns.dexesUsed);
-      
-      
     }
   } catch (error) {
     console.log("Error", error);
