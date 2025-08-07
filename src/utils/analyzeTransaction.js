@@ -1,5 +1,6 @@
 import { DEX_PROGRAM_IDS } from "../constants.js";
 import { decodedTradePath } from "../lib/decodedTradePath.js";
+import { estimatePnL } from "../lib/estimatePnL.js";
 import { getInitiatorWallet } from "../lib/getInitiatorWallet.js";
 
 export const analyzeTransaction = async (transaction) => {
@@ -67,7 +68,7 @@ export const analyzeTransaction = async (transaction) => {
   // If no DEX programs found but there are token balance changes, it might be a DEX we don't recognize
   if (usedDexes.size === 0 && (meta.preTokenBalances?.length || 0) > 0) {
     // Log unknown program IDs for debugging
-    console.log('Unknown DEX transaction detected. Program IDs:', Array.from(allProgramIds));
+    // console.log('Unknown DEX transaction detected. Program IDs:', Array.from(allProgramIds));
     
     const hasTokenSwap = meta.preTokenBalances?.length > 0 && meta.postTokenBalances?.length > 0;
     if (hasTokenSwap) {
@@ -99,6 +100,7 @@ export const analyzeTransaction = async (transaction) => {
     programCalls,
     tradePath,
     initiatorWallet,
+    profitNLoss: estimatePnL(meta),
     success: meta.err === null,
     fee: meta.fee,
     mainInstructions: instructions.length,
