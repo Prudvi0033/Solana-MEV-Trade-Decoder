@@ -55,14 +55,4 @@ export const DEX_PROGRAM_IDS = {
   
   // Pump.fun (if applicable)
   '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P': 'Pump.fun',
-  
-  // System Program (for native SOL transfers)
-  '11111111111111111111111111111111': 'System Program',
-  
-  // Token Program
-  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA': 'Token Program',
-  'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb': 'Token Program 2022',
-  
-  // Associated Token Program
-  'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL': 'Associated Token Program'
 };
