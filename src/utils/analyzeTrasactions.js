@@ -1,3 +1,4 @@
+import { getInitiatorWallet } from "../lib/getInitiatorWallet.js";
 import { decodeTradePath } from "../lib/traderPath.js";
 
 export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
@@ -238,6 +239,7 @@ export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
     matchedProgramIds: [...allProgramIds].filter((pid) => DEX_PROGRAM_IDS[pid]),
     unknownButSuspicious: isProbableSwap ? [...allProgramIds] : [],
     hasRelevantTokenOp,
+    initiatorWallet: getInitiatorWallet(tx),
     tradePath: tradePath,
     platforms: platforms,
     isKnownDex: knownDex,
