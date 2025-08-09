@@ -3,21 +3,16 @@ import { decodeTradePath } from "../lib/traderPath.js";
 export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
   const allProgramIds = new Set();
 
-  // Handle different transaction formats from Solana RPC
   let accountKeys = [];
   let instructions = [];
 
   if (tx.transaction?.message?.accountKeys) {
-    // Standard transaction format
     accountKeys = tx.transaction.message.accountKeys.map((k) => k.toString());
     instructions = tx.transaction.message.instructions || [];
   } else if (tx.message?.accountKeys) {
-    // Alternative format where message is at top level
     accountKeys = tx.message.accountKeys.map((k) => k.toString());
     instructions = tx.message.instructions || [];
   } else {
-    // Cannot parse transaction format
-    // console.warn('Unknown transaction format:', Object.keys(tx));
     return {
       isKnownDexSwap: false,
       isProbableSwap: false,
@@ -83,11 +78,9 @@ export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
     return false;
   }
 
-  // --- Collect all program IDs (FIXED: use .has() instead of array access) ---
   instructions.forEach((ix) => {
     const pid = accountKeys[ix.programIdIndex];
     if (!IGNORED_PROGRAM_IDS.has(pid)) {
-      // ✅ FIXED: was using [pid] instead of .has(pid)
       allProgramIds.add(pid);
     }
   });
@@ -234,7 +227,7 @@ export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
   const tradePathData = decodeTradePath(tx, DEX_PROGRAM_IDS);
 
   const tradePath = tradePathData ? tradePathData.path : null;
-  const platforms = tradePathData ? tradePathData.platforms : [];
+  const platforms = tradePathData ? tradePathData.platforms || [] : [];
 
   const result = {
     signature: tx.transaction?.signatures?.[0] || "N/A",

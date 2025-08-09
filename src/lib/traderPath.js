@@ -1,3 +1,37 @@
+const IGNORED_PROGRAM_IDS = new Set([
+  // Core Solana Programs
+  "ComputeBudget111111111111111111111111111111", // Compute Budget Program
+  "AddressLookupTab1e1111111111111111111111111", // Address Lookup Table Program
+  "11111111111111111111111111111111", // System Program
+
+  // Token Programs (we check these separately)
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", // SPL Token Program
+  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb", // Token Extensions Program (Token-2022)
+  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL", // Associated Token Account Program
+
+  // Common Utility Programs
+  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr", // Memo Program
+  "Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo", // Memo Program v1
+  "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV", // Noop Program
+
+  // Rent and Staking
+  "SysvarRent111111111111111111111111111111111", // Rent Sysvar
+  "SysvarC1ock11111111111111111111111111111111", // Clock Sysvar
+  "SysvarRecentB1ockHashes11111111111111111111", // Recent Blockhashes Sysvar
+  "SysvarS1otHashes111111111111111111111111111", // Slot Hashes Sysvar
+  "Stake11111111111111111111111111111111111111", // Stake Program
+  "Vote111111111111111111111111111111111111111", // Vote Program
+
+  // Metaplex (NFT-related, usually not DEX activity)
+  "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s", // Metaplex Token Metadata
+  "p1exdMJcjVao65QdewkaZRUnU6VPSXhus9n2GzWfh98", // Metaplex Token Vault
+  "auctxRXPeJoc4817jDhf4HbjnhEcr1cCXenosMhK5R8", // Metaplex Auction House
+
+  // Pyth Oracle (price feeds, not swaps)
+  "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH", // Pyth Oracle
+  "gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s", // Pyth Push Oracle
+]);
+
 const TOKEN_SYMBOLS = {
   EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: "USDC",
   Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: "USDT",
@@ -18,7 +52,7 @@ export function decodeTradePath(tx, DEX_PROGRAM_IDS) {
   }
 
   const swaps = [];
-  const platforms = new Set(); 
+  const platforms = new Set();
 
   const getTokenName = (mint) => TOKEN_SYMBOLS[mint] || mint.slice(0, 6);
   const accountKeys =
@@ -27,11 +61,12 @@ export function decodeTradePath(tx, DEX_PROGRAM_IDS) {
   const processIxGroup = (ixs) => {
     ixs.forEach((ix) => {
       const pid = accountKeys[ix.programIdIndex];
-      const dexName = DEX_PROGRAM_IDS[pid] || pid.slice(0, 6);
 
-      if (DEX_PROGRAM_IDS[pid]) {
-        platforms.add(dexName); // Collect platform name
-      }
+      // Skip ignored programs
+      if (IGNORED_PROGRAM_IDS.has(pid)) return;
+
+      const dexName = DEX_PROGRAM_IDS[pid] || pid.slice(0, 6);
+      platforms.add(dexName);
 
       // Identify token mints involved
       const involvedMints = new Set();
@@ -83,8 +118,7 @@ export function decodeTradePath(tx, DEX_PROGRAM_IDS) {
   });
 
   return {
-    path: pathParts.join(" "),
-    platforms: Array.from(platforms) // Convert Set to array
+    path: pathParts.join(", "), // comma separates multiple hops
+    platforms: Array.from(platforms),
   };
 }
-

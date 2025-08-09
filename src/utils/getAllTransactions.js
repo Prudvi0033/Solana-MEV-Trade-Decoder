@@ -8,7 +8,7 @@ export const getAllTransactions = async () => {
   });
   
   const slotNo = await connection.getSlot();
-  console.log('🔍 Scanning slot:', slotNo);
+  console.log('Scanning slot:', slotNo);
 
   const getBlock = await connection.getBlock(slotNo, {
     commitment: "finalized",
@@ -22,9 +22,9 @@ export const getAllTransactions = async () => {
     return [];
   }
 
-  console.log(`📦 Block found with ${getBlock.transactions.length} transactions`);
+  console.log(`Block found with ${getBlock.transactions.length} transactions`);
   
-  const swapTransactions = []; // Only store swaps
+  const swapTransactions = []; 
   const transactions = getBlock.transactions;
 
   for (let i = 0; i < transactions.length; i++) {
@@ -33,7 +33,7 @@ export const getAllTransactions = async () => {
     try {
       const analyzedTransaction = detectSwapTransaction(tx, DEX_PROGRAM_IDS);
       
-      // Only add if it's actually a swap
+      //adding only if swap is detected
       if (analyzedTransaction.swapDetected) {
         swapTransactions.push(analyzedTransaction);
       }
@@ -43,18 +43,20 @@ export const getAllTransactions = async () => {
     }
   }
 
-  console.log(`\n🎉 Found ${swapTransactions.length} swap transactions out of ${transactions.length} total transactions`);
+  console.log(`Found ${swapTransactions.length} swap transactions out of ${transactions.length} total transactions`);
   
   // Show summary of swaps found
   swapTransactions.forEach((swap, idx) => {
     console.log(`\n${idx + 1}. 🔄 Swap Transaction:`);
-    console.log(`   📝 Signature: ${swap.signature}`);
-    console.log(`   👤 User: ${swap.swapDetails.owner.slice(0,12)}...`);
-    console.log(`   📈 Tokens Out: ${swap.swapDetails.tokensOut.map(t => `${t.amount} ${t.mint.slice(0,8)}...`).join(', ')}`);
-    console.log(`   📉 Tokens In: ${swap.swapDetails.tokensIn.map(t => `${t.amount} ${t.mint.slice(0,8)}...`).join(', ')}`);
-    console.log(`   🏦 Known DEX: ${swap.isKnownDex ? 'Yes' : 'No'}`);
+    console.log(`     Signature: ${swap.signature}`);
+    console.log(`     User: ${swap.swapDetails.owner}`);
+    console.log(`     Tokens Out: ${swap.swapDetails.tokensOut.map(t => `${t.amount} - ${t.mint.slice(0,8)}...`).join(', ')}`);
+    console.log(`     Tokens In: ${swap.swapDetails.tokensIn.map(t => `${t.amount} - ${t.mint.slice(0,8)}...`).join(', ')}`);
+    console.log(`     Trader Path: ${swap.tradePath}`);
+    console.log(`     Platforms: [ ${swap.platforms.join(", ")} ]`);
+    
     if (swap.matchedProgramIds.length > 0) {
-      console.log(`   📋 DEX Programs: ${swap.matchedProgramIds.join(', ')}`);
+      console.log(`   📋 DEX Programs:[${swap.matchedProgramIds.join(', ')}]`);
     }
   });
 
