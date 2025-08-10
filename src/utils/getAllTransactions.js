@@ -2,6 +2,7 @@ import { Connection } from "@solana/web3.js";
 import { detectSwapTransaction } from "./analyzeTrasactions.js"; // check spelling later
 import { DEX_PROGRAM_IDS } from "../constants.js";
 import { detectArbitrage } from "../lib/detectArbitrage.js";
+import { detectMEV, getMEVDescription } from "../lib/detectedMev.js"; // Add this import
 
 export const getAllTransactions = async () => {
   const connection = new Connection("https://api.mainnet-beta.solana.com", {
@@ -34,7 +35,6 @@ export const getAllTransactions = async () => {
     const swapTransactions = [];
     const transactions = getBlock.transactions;
 
-    // Detect all swaps in this slot
     for (let i = 0; i < transactions.length; i++) {
       const tx = transactions[i];
 
@@ -54,7 +54,6 @@ export const getAllTransactions = async () => {
       `Found ${swapTransactions.length} swap transactions out of ${transactions.length} total transactions`
     );
 
-    // 🔥 FIXED: Analyze ALL swaps together for arbitrage patterns
     const arbitrageResult = detectArbitrage(swapTransactions, DEX_PROGRAM_IDS);
     
     console.log(`\n🎯 ARBITRAGE ANALYSIS:`);
@@ -63,6 +62,33 @@ export const getAllTransactions = async () => {
     console.log(`High confidence: ${arbitrageResult.summary.highConfidenceCount}`);
     console.log(`Multi-DEX usage: ${arbitrageResult.summary.multiDexUsageCount}`);
     console.log(`Round-trip trading: ${arbitrageResult.summary.roundTripTradingCount}`);
+
+    // MEV Detection
+    const mevTransactions = [];
+    swapTransactions.forEach((swap, index) => {
+      try {
+        const mevResult = detectMEV(swap, swapTransactions, index);
+        if (mevResult.isMev) {
+          mevTransactions.push({ ...swap, mevResult });
+        }
+      } catch (error) {
+        console.error(`Error detecting MEV for transaction ${swap.signature}:`, error.message);
+      }
+    });
+
+    console.log(`\n🤖 MEV ANALYSIS:`);
+    console.log(`MEV transactions detected: ${mevTransactions.length}/${swapTransactions.length}`);
+
+    if (mevTransactions.length > 0) {
+      console.log(`\n🚨 MEV TRANSACTIONS DETECTED:`);
+      mevTransactions.forEach((mevTx, idx) => {
+        console.log(`\n${idx + 1}. 🤖 ${mevTx.mevResult.mevType.toUpperCase()} (${mevTx.mevResult.confidence}% confidence)`);
+        console.log(`     Description: ${getMEVDescription(mevTx.mevResult.mevType)}`);
+        console.log(`     Signature: ${mevTx.signature}`);
+        console.log(`     User: ${mevTx.swapDetails?.owner || 'Unknown'}`);
+        console.log(`     Platforms: [${(mevTx.platforms || []).join(', ')}]`);
+      });
+    }
 
     if (arbitrageResult.allCriteriaMet) {
       console.log(`\n🚨 PERFECT ARBITRAGE DETECTED! 🚨`);
@@ -85,7 +111,6 @@ export const getAllTransactions = async () => {
         });
     }
 
-    // Show high-confidence opportunities too
     const highConfidenceArbitrage = arbitrageResult.opportunities.filter(opp => 
       opp.confidence === 'HIGH' && !opp.allCriteriaMet
     );
@@ -101,38 +126,16 @@ export const getAllTransactions = async () => {
       });
     }
 
-    // Display individual swap details (optional - you can comment this out)
-    if (swapTransactions.length > 0 && swapTransactions.length <= 10) { // Only show if manageable number
+    if (swapTransactions.length) { 
       console.log(`\n📋 INDIVIDUAL SWAP DETAILS:`);
       swapTransactions.forEach((swap, idx) => {
         console.log(`\n${idx + 1}. 🔄 Swap Transaction:`);
         console.log(`     Signature: ${swap.signature}`);
         console.log(`     User: ${swap.swapDetails?.owner || 'Unknown'}`);
         console.log(`     Initiator Wallet: ${swap.initiatorWallet}`);
-        
-        if (swap.swapDetails?.tokensOut) {
-          console.log(
-            `     Tokens Out: ${swap.swapDetails.tokensOut
-              .map((t) => `${t.amount} - ${t.mint.slice(0, 8)}...`)
-              .join(", ")}`
-          );
-        }
-        
-        if (swap.swapDetails?.tokensIn) {
-          console.log(
-            `     Tokens In: ${swap.swapDetails.tokensIn
-              .map((t) => `${t.amount} - ${t.mint.slice(0, 8)}...`)
-              .join(", ")}`
-          );
-        }
-        
         console.log(`     Trade Path: ${swap.tradePath || 'N/A'}`);
         console.log(`     Platforms: [ ${(swap.platforms || []).join(", ")} ]`);
       });
-    } else if (swapTransactions.length > 10) {
-      console.log(`\n📋 Too many swaps (${swapTransactions.length}) to display individually`);
-    }
-
-    console.log(`\n${'='.repeat(80)}`);
+    } 
   }
 };

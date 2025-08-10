@@ -128,7 +128,7 @@ export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
       const key = `${balance.accountIndex}_${balance.mint}`;
       const existing = balanceChanges.get(key);
       if (existing) {
-        existing.post = parseFloat(balance.uiTokenAmount?.uiAmountString || 0); // ✅ FIXED: added ? operator
+        existing.post = parseFloat(balance.uiTokenAmount?.uiAmountString || 0); 
         existing.change = existing.post - existing.pre;
       } else {
         // New token account created during transaction
@@ -137,8 +137,8 @@ export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
           mint: balance.mint,
           owner: balance.owner,
           pre: 0,
-          post: parseFloat(balance.uiTokenAmount?.uiAmountString || 0), // ✅ FIXED: added ? operator
-          change: parseFloat(balance.uiTokenAmount?.uiAmountString || 0), // ✅ FIXED: added ? operator
+          post: parseFloat(balance.uiTokenAmount?.uiAmountString || 0),
+          change: parseFloat(balance.uiTokenAmount?.uiAmountString || 0), 
         });
       }
     });
@@ -177,17 +177,6 @@ export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
             [...lossMints].some((mint) => !gainMints.has(mint));
 
           if (swappedDifferentTokens) {
-            console.log(`✅ SWAP DETECTED! Owner: ${owner.slice(0, 8)}...`);
-            console.log(
-              `   📈 Gained: ${gains
-                .map((g) => `${g.amount} ${g.mint.slice(0, 8)}`)
-                .join(", ")}`
-            );
-            console.log(
-              `   📉 Lost: ${losses
-                .map((l) => `${l.amount} ${l.mint.slice(0, 8)}`)
-                .join(", ")}`
-            );
             return {
               isSwap: true,
               owner,
