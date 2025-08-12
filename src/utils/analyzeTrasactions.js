@@ -33,11 +33,6 @@ export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
     "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb", // Token Extensions Program (Token-2022)
     "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL", // Associated Token Account Program
 
-    // Common Utility Programs
-    "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr", // Memo Program
-    "Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo", // Memo Program v1
-    "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV", // Noop Program
-
     // Rent and Staking
     "SysvarRent111111111111111111111111111111111", // Rent Sysvar
     "SysvarC1ock11111111111111111111111111111111", // Clock Sysvar
@@ -50,10 +45,6 @@ export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
     "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s", // Metaplex Token Metadata
     "p1exdMJcjVao65QdewkaZRUnU6VPSXhus9n2GzWfh98", // Metaplex Token Vault
     "auctxRXPeJoc4817jDhf4HbjnhEcr1cCXenosMhK5R8", // Metaplex Auction House
-
-    // Pyth Oracle (price feeds, not swaps)
-    "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH", // Pyth Oracle
-    "gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s", // Pyth Push Oracle
   ]);
 
   const TOKEN_PROGRAM_IDS = [
@@ -102,28 +93,24 @@ export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
     const preBalances = tx.meta?.preTokenBalances || [];
     const postBalances = tx.meta?.postTokenBalances || [];
 
-    // Debug logging (reduced verbosity)
     if (preBalances.length === 0 && postBalances.length === 0) {
       return { isSwap: false, reason: "No token balance data" };
     }
 
-    // Create balance change map: {account_mint_key: {pre, post, change, owner}}
     const balanceChanges = new Map();
 
-    // Process pre-balances
     preBalances.forEach((balance) => {
       const key = `${balance.accountIndex}_${balance.mint}`;
       balanceChanges.set(key, {
         accountIndex: balance.accountIndex,
         mint: balance.mint,
         owner: balance.owner,
-        pre: parseFloat(balance.uiTokenAmount?.uiAmountString || 0), // ✅ FIXED: added ? operator
+        pre: parseFloat(balance.uiTokenAmount?.uiAmountString || 0), 
         post: 0,
         change: 0,
       });
     });
 
-    // Process post-balances and calculate changes
     postBalances.forEach((balance) => {
       const key = `${balance.accountIndex}_${balance.mint}`;
       const existing = balanceChanges.get(key);
@@ -143,17 +130,14 @@ export function detectSwapTransaction(tx, DEX_PROGRAM_IDS) {
       }
     });
 
-    // Only log for potential swaps
-    const hasSignificantChanges = balanceChanges.size > 0;
+    // const hasSignificantChanges = balanceChanges.size > 0;
 
-    // Group by owner to detect swap patterns
     const ownerChanges = new Map();
     balanceChanges.forEach((change) => {
       if (!ownerChanges.has(change.owner)) {
         ownerChanges.set(change.owner, []);
       }
       if (Math.abs(change.change) > 0.000001) {
-        // Ignore dust
         ownerChanges.get(change.owner).push(change);
       }
     });
